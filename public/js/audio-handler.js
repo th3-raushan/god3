@@ -17,8 +17,8 @@ const AudioHandler = (() => {
   let activeSources = [];
   let nextPlayTime = 0;
 
-  // Jitter buffer: delay before first chunk plays to absorb network jitter
-  const JITTER_BUFFER_MS = 0.12; // 120ms lookahead
+  // Jitter buffer: minimal delay before first chunk for smoother playback
+  const JITTER_BUFFER_MS = 0.05; // 50ms — low latency
 
   async function initInput() {
     if (inputCtx) return;

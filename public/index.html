@@ -2,158 +2,94 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <meta name="description" content="TruthLens VisionGuide — AI-powered real-time navigation assistant for the visually impaired." />
   <title>TruthLens VisionGuide</title>
   <link rel="stylesheet" href="css/index.css" />
 </head>
 <body>
-  <div class="app" role="main">
-    <header class="header">
-      <div class="header__brand">
-        <h1 class="header__title">TruthLens VisionGuide</h1>
+  <div class="app" id="app">
+
+    <!-- Top bar -->
+    <header class="topbar" id="topbar">
+      <div class="live-badge" id="live-badge" hidden>
+        <div class="live-badge__bars">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <span class="live-badge__text">Live</span>
       </div>
-      <p class="header__subtitle">AI-powered navigation assistant</p>
     </header>
 
-    <!-- Connection Status -->
-    <div class="connection-bar" id="connection-bar">
-      <span class="connection-bar__dot" id="conn-dot"></span>
-      <span class="connection-bar__text" id="conn-text">Disconnected</span>
-      <button class="btn btn--primary btn--sm" id="btn-connect" aria-label="Connect to Gemini AI">Connect</button>
-    </div>
+    <!-- Full-viewport camera feed -->
+    <div class="viewport" id="viewport">
+      <video id="camera-feed" autoplay playsinline muted></video>
 
-    <section class="card" id="hw-card" aria-labelledby="hw-heading">
-      <div class="card__header">
-        <span class="card__icon" aria-hidden="true">&#9881;</span>
-        <h2 class="card__title" id="hw-heading">Hardware Check</h2>
-      </div>
-      <ul class="hw-list" id="hw-list">
-        <li class="hw-item" id="hw-camera">
-          <div class="hw-item__info">
-            <div class="hw-item__icon" aria-hidden="true">&#127909;</div>
-            <div>
-              <div class="hw-item__label">Camera</div>
-              <div class="hw-item__detail" id="hw-camera-detail">Not checked yet</div>
-            </div>
-          </div>
-          <span class="status-badge status-badge--pending" id="hw-camera-badge"><span class="status-dot"></span> Pending</span>
-        </li>
-        <li class="hw-item" id="hw-mic">
-          <div class="hw-item__info">
-            <div class="hw-item__icon" aria-hidden="true">&#127908;</div>
-            <div>
-              <div class="hw-item__label">Microphone</div>
-              <div class="hw-item__detail" id="hw-mic-detail">Not checked yet</div>
-            </div>
-          </div>
-          <span class="status-badge status-badge--pending" id="hw-mic-badge"><span class="status-dot"></span> Pending</span>
-        </li>
-        <li class="hw-item" id="hw-speaker">
-          <div class="hw-item__info">
-            <div class="hw-item__icon" aria-hidden="true">&#128266;</div>
-            <div>
-              <div class="hw-item__label">Speaker</div>
-              <div class="hw-item__detail" id="hw-speaker-detail">Not checked yet</div>
-            </div>
-          </div>
-          <span class="status-badge status-badge--pending" id="hw-speaker-badge"><span class="status-dot"></span> Pending</span>
-        </li>
-      </ul>
-      <div class="btn-group">
-        <button class="btn btn--primary" id="btn-check-all" aria-label="Run all hardware checks">Run All Checks</button>
-        <button class="btn btn--secondary" id="btn-test-speaker" aria-label="Play a test tone through speakers">Test Speaker</button>
-      </div>
-    </section>
+      <!-- Glow border for voice activity -->
+      <div class="viewport__glow" id="viewport-glow"></div>
 
-    <section class="card" id="preview-card" aria-labelledby="preview-heading">
-      <div class="card__header">
-        <span class="card__icon" aria-hidden="true">&#128247;</span>
-        <h2 class="card__title" id="preview-heading">Camera Preview</h2>
-        <div class="camera-controls" id="camera-controls">
-          <button class="btn btn--secondary btn--sm" id="btn-camera-toggle" aria-label="Toggle camera streaming to AI" disabled>Start Streaming</button>
-        </div>
-      </div>
-      <div class="preview-container" id="preview-container">
-        <video id="camera-preview" autoplay playsinline muted aria-label="Live camera feed"></video>
-        <div class="preview-placeholder" id="preview-placeholder">
-          <span class="preview-placeholder__icon" aria-hidden="true">&#128247;</span>
-          <span>Camera feed will appear here</span>
-        </div>
-        <div class="camera-fps-badge" id="camera-fps-badge" hidden>
-          <span class="camera-fps-badge__dot"></span>
-          <span class="camera-fps-badge__text" id="camera-fps-text">1 FPS</span>
-        </div>
-        <div class="camera-streaming-indicator" id="camera-streaming-indicator" hidden>
-          <span class="camera-streaming-indicator__dot"></span>
-          <span>Streaming to AI</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="card" id="audio-card" aria-labelledby="audio-heading">
-      <div class="card__header">
-        <span class="card__icon" aria-hidden="true">&#127911;</span>
-        <h2 class="card__title" id="audio-heading">Audio Monitor</h2>
-      </div>
-      <div class="audio-monitor">
-        <div class="audio-monitor__channel">
-          <span class="audio-monitor__label">Input</span>
-          <div class="visualizer" id="mic-visualizer" role="img" aria-label="Microphone audio level visualizer"></div>
-        </div>
-        <div class="audio-monitor__channel">
-          <span class="audio-monitor__label">Output</span>
-          <div class="visualizer visualizer--output" id="output-visualizer" role="img" aria-label="AI audio output level visualizer"></div>
-        </div>
-      </div>
-      <div class="voice-status" id="voice-status" aria-live="polite">
-        <span class="voice-status__dot" id="voice-dot"></span>
-        <span class="voice-status__text" id="voice-text">Voice inactive</span>
-      </div>
-    </section>
-
-    <!-- Chat Panel -->
-    <section class="card" id="chat-card" aria-labelledby="chat-heading">
-      <div class="card__header">
-        <span class="card__icon" aria-hidden="true">&#128172;</span>
-        <h2 class="card__title" id="chat-heading">Chat with VisionGuide</h2>
-      </div>
-      <div class="chat-messages" id="chat-messages" role="log" aria-live="polite">
-        <div class="chat-empty">Connect to Gemini and start a conversation</div>
-      </div>
-      <div class="live-caption" id="live-caption" aria-live="polite" hidden>
-        <span class="live-caption__label">Live</span>
-        <span class="live-caption__text" id="live-caption-text"></span>
-      </div>
-      <div class="live-caption live-caption--input" id="live-caption-input" aria-live="polite" hidden>
-        <span class="live-caption__label">You</span>
-        <span class="live-caption__text" id="live-caption-input-text"></span>
-      </div>
-      <form class="chat-input" id="chat-form">
-        <button type="button" class="btn btn--mic" id="btn-mic" aria-label="Toggle microphone for voice input" disabled>
-          <span class="mic-pulse" id="mic-pulse"></span>
-          <span class="mic-icon" id="mic-icon"></span>
-          <span class="mic-label" id="mic-label">Mic</span>
+      <!-- Idle screen (before session) -->
+      <div class="idle-screen" id="idle-screen">
+        <h1 class="idle-screen__title">TruthLens VisionGuide</h1>
+        <p class="idle-screen__sub">AI-powered navigation assistant</p>
+        <button class="btn-start" id="btn-start" aria-label="Start VisionGuide session">
+          <!-- Mic SVG icon -->
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+          </svg>
         </button>
-        <input type="text" class="chat-input__field" id="chat-input" placeholder="Type or speak…" autocomplete="off" aria-label="Message input" disabled />
-        <button type="submit" class="btn btn--primary btn--sm" id="btn-send" aria-label="Send message" disabled>Send</button>
-      </form>
-    </section>
-
-    <section class="card" id="log-card" aria-labelledby="log-heading">
-      <div class="card__header">
-        <span class="card__icon" aria-hidden="true">&#128221;</span>
-        <h2 class="card__title" id="log-heading">System Log</h2>
+        <p class="idle-screen__hint">Tap to start</p>
       </div>
-      <div class="log" id="system-log" aria-live="polite" role="log">
-        <div class="log__entry log__entry--info">Waiting for hardware check&hellip;</div>
-      </div>
-    </section>
-
-    <div class="status-banner status-banner--idle" id="overall-status" role="status" aria-live="polite">
-      Press "Run All Checks" to verify your hardware
     </div>
+
+    <!-- Transcription overlay -->
+    <div class="transcript" id="transcript" hidden>
+      <span class="transcript__text" id="transcript-text"></span>
+    </div>
+
+    <!-- Voice activity indicator -->
+    <div class="voice-indicator" id="voice-indicator" hidden>
+      <div class="voice-indicator__bars" id="voice-bars">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <span class="voice-indicator__label" id="voice-label">Listening</span>
+    </div>
+
+    <!-- Status toast -->
+    <div class="toast" id="toast" hidden>
+      <span id="toast-text"></span>
+    </div>
+
+    <!-- Bottom controls (shown when session is active) -->
+    <div class="controls" id="controls" hidden>
+      <button class="ctrl-btn" id="btn-mic" aria-label="Toggle microphone">
+        <svg class="ctrl-icon ctrl-icon--on" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+        </svg>
+        <svg class="ctrl-icon ctrl-icon--off" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z"/>
+        </svg>
+      </button>
+
+      <button class="ctrl-btn" id="btn-cam" aria-label="Toggle camera">
+        <svg class="ctrl-icon ctrl-icon--on" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+        </svg>
+        <svg class="ctrl-icon ctrl-icon--off" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-.73L21.73 22 23 20.73 3.27 2z"/>
+        </svg>
+      </button>
+
+      <button class="ctrl-btn ctrl-btn--end" id="btn-end" aria-label="End session">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      </button>
+    </div>
+
   </div>
+
   <script src="js/hardware.js"></script>
   <script src="js/audio-handler.js"></script>
   <script src="js/camera-handler.js"></script>

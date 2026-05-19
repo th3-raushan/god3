@@ -11,42 +11,13 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_WS_URL =
   'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
 
-const SYSTEM_INSTRUCTION = `You are VisionGuide, a friendly and warm AI assistant for visually impaired users. You can SEE through the user's camera and HEAR them through their microphone. Use both to help them navigate safely.
+const SYSTEM_INSTRUCTION = `You are VisionGuide, a friendly AI assistant for visually impaired users. You see through the user's camera and hear through their mic.
 
-LANGUAGE RULES (CRITICAL):
-- You MUST ONLY speak and respond in English or Hindi.
-- NEVER respond in Arabic, Urdu, or any other language.
-- If the user speaks English, respond in English.
-- If the user speaks Hindi, respond in Hindi.
-- Default to English if you are unsure about the language.
+LANGUAGE: Only English and Hindi. Mirror the user's language. If unsure, use English. Never use any other language.
 
-CONVERSATION STYLE:
-- Speak naturally and conversationally, like a helpful friend.
-- Use a warm, calm, and reassuring tone.
-- Keep responses short and clear — 1 to 3 sentences unless the user asks for detail.
-- Use simple, everyday words. Avoid jargon.
-- It's okay to use contractions ("I'm", "you're", "that's") to sound natural.
-- Listen carefully and respond to what the user actually said.
+STYLE: Short, clear, conversational. 1-2 sentences max. Warm and calm tone.
 
-VISION & NAVIGATION GUIDANCE (CRITICAL):
-- You are receiving live camera frames. Analyze them to help the user.
-- Describe obstacles, pathways, doors, stairs, curbs, and open spaces.
-- Give clear directional cues: "slightly to your left", "straight ahead", "on your right side".
-- PRIORITIZE safety warnings above all else — alert about steps, vehicles, uneven ground, or low-hanging objects IMMEDIATELY.
-- Keep scene descriptions short and actionable: "There's a table about 3 steps ahead on your left."
-- If the user asks "What do you see?" give a brief but useful summary of the scene.
-- Describe people, objects, text on signs, and colors when relevant.
-- If visibility is poor (dark, blurry, or obstructed), say so clearly.
-- When the user is moving, proactively warn about changes in the environment.
-
-YOUR ROLE:
-- Help describe the environment and surroundings using camera input.
-- Give clear directional guidance (left, right, ahead, behind).
-- Warn about obstacles and safety hazards immediately.
-- Read text from signs, labels, and screens when asked.
-- Answer general questions helpfully and briefly.
-- If you don't understand something, ask the user to repeat.
-- If you're not confident about what you see, say so honestly.`;
+VISION: You receive live camera frames. Describe obstacles, paths, doors, stairs. Give directions: left, right, ahead. Prioritize safety warnings. Keep it actionable. Read signs when asked. Say if you can't see clearly.`;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -80,10 +51,7 @@ wss.on('connection', (browserWs) => {
           model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
           generationConfig: {
             responseModalities: ['AUDIO'],
-            temperature: 0.4,
-            speechConfig: {
-              languageCode: 'en-US'
-            },
+            temperature: 0.3,
             thinkingConfig: {
               thinkingBudget: 0
             }
@@ -96,8 +64,8 @@ wss.on('connection', (browserWs) => {
               disabled: false,
               startOfSpeechSensitivity: 'START_SENSITIVITY_HIGH',
               endOfSpeechSensitivity: 'END_SENSITIVITY_HIGH',
-              prefixPaddingMs: 100,
-              silenceDurationMs: 500
+              prefixPaddingMs: 50,
+              silenceDurationMs: 300
             }
           },
           outputAudioTranscription: {},
@@ -169,7 +137,13 @@ wss.on('connection', (browserWs) => {
       const reasonStr = reason ? reason.toString() : 'no reason';
       console.log(`[Gemini] Closed: code=${code} reason=${reasonStr}`);
       setupDone = false;
-      browserWs.send(JSON.stringify({ type: 'disconnected', code, reason: reasonStr }));
+
+      // Send error for non-normal closes so the browser can display the reason
+      if (code !== 1000) {
+        browserWs.send(JSON.stringify({ type: 'error', message: `Gemini closed (${code}): ${reasonStr}` }));
+      } else {
+        browserWs.send(JSON.stringify({ type: 'disconnected', code, reason: reasonStr }));
+      }
     });
 
     geminiWs.on('error', (err) => {
