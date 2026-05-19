@@ -1,0 +1,15 @@
+{
+  "name": "truthlens-visionguide",
+  "version": "1.0.0",
+  "description": "AI-powered blind navigation & environmental assistance system",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  }
+}

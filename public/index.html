@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="TruthLens VisionGuide — AI-powered real-time navigation assistant for the visually impaired." />
+  <title>TruthLens VisionGuide</title>
+  <link rel="stylesheet" href="css/index.css" />
+</head>
+<body>
+  <div class="app" role="main">
+    <header class="header">
+      <div class="header__brand">
+        <h1 class="header__title">TruthLens VisionGuide</h1>
+      </div>
+      <p class="header__subtitle">AI-powered navigation assistant</p>
+    </header>
+
+    <!-- Connection Status -->
+    <div class="connection-bar" id="connection-bar">
+      <span class="connection-bar__dot" id="conn-dot"></span>
+      <span class="connection-bar__text" id="conn-text">Disconnected</span>
+      <button class="btn btn--primary btn--sm" id="btn-connect" aria-label="Connect to Gemini AI">Connect</button>
+    </div>
+
+    <section class="card" id="hw-card" aria-labelledby="hw-heading">
+      <div class="card__header">
+        <span class="card__icon" aria-hidden="true">&#9881;</span>
+        <h2 class="card__title" id="hw-heading">Hardware Check</h2>
+      </div>
+      <ul class="hw-list" id="hw-list">
+        <li class="hw-item" id="hw-camera">
+          <div class="hw-item__info">
+            <div class="hw-item__icon" aria-hidden="true">&#127909;</div>
+            <div>
+              <div class="hw-item__label">Camera</div>
+              <div class="hw-item__detail" id="hw-camera-detail">Not checked yet</div>
+            </div>
+          </div>
+          <span class="status-badge status-badge--pending" id="hw-camera-badge"><span class="status-dot"></span> Pending</span>
+        </li>
+        <li class="hw-item" id="hw-mic">
+          <div class="hw-item__info">
+            <div class="hw-item__icon" aria-hidden="true">&#127908;</div>
+            <div>
+              <div class="hw-item__label">Microphone</div>
+              <div class="hw-item__detail" id="hw-mic-detail">Not checked yet</div>
+            </div>
+          </div>
+          <span class="status-badge status-badge--pending" id="hw-mic-badge"><span class="status-dot"></span> Pending</span>
+        </li>
+        <li class="hw-item" id="hw-speaker">
+          <div class="hw-item__info">
+            <div class="hw-item__icon" aria-hidden="true">&#128266;</div>
+            <div>
+              <div class="hw-item__label">Speaker</div>
+              <div class="hw-item__detail" id="hw-speaker-detail">Not checked yet</div>
+            </div>
+          </div>
+          <span class="status-badge status-badge--pending" id="hw-speaker-badge"><span class="status-dot"></span> Pending</span>
+        </li>
+      </ul>
+      <div class="btn-group">
+        <button class="btn btn--primary" id="btn-check-all" aria-label="Run all hardware checks">Run All Checks</button>
+        <button class="btn btn--secondary" id="btn-test-speaker" aria-label="Play a test tone through speakers">Test Speaker</button>
+      </div>
+    </section>
+
+    <section class="card" id="preview-card" aria-labelledby="preview-heading">
+      <div class="card__header">
+        <span class="card__icon" aria-hidden="true">&#128247;</span>
+        <h2 class="card__title" id="preview-heading">Camera Preview</h2>
+        <div class="camera-controls" id="camera-controls">
+          <button class="btn btn--secondary btn--sm" id="btn-camera-toggle" aria-label="Toggle camera streaming to AI" disabled>Start Streaming</button>
+        </div>
+      </div>
+      <div class="preview-container" id="preview-container">
+        <video id="camera-preview" autoplay playsinline muted aria-label="Live camera feed"></video>
+        <div class="preview-placeholder" id="preview-placeholder">
+          <span class="preview-placeholder__icon" aria-hidden="true">&#128247;</span>
+          <span>Camera feed will appear here</span>
+        </div>
+        <div class="camera-fps-badge" id="camera-fps-badge" hidden>
+          <span class="camera-fps-badge__dot"></span>
+          <span class="camera-fps-badge__text" id="camera-fps-text">1 FPS</span>
+        </div>
+        <div class="camera-streaming-indicator" id="camera-streaming-indicator" hidden>
+          <span class="camera-streaming-indicator__dot"></span>
+          <span>Streaming to AI</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="audio-card" aria-labelledby="audio-heading">
+      <div class="card__header">
+        <span class="card__icon" aria-hidden="true">&#127911;</span>
+        <h2 class="card__title" id="audio-heading">Audio Monitor</h2>
+      </div>
+      <div class="audio-monitor">
+        <div class="audio-monitor__channel">
+          <span class="audio-monitor__label">Input</span>
+          <div class="visualizer" id="mic-visualizer" role="img" aria-label="Microphone audio level visualizer"></div>
+        </div>
+        <div class="audio-monitor__channel">
+          <span class="audio-monitor__label">Output</span>
+          <div class="visualizer visualizer--output" id="output-visualizer" role="img" aria-label="AI audio output level visualizer"></div>
+        </div>
+      </div>
+      <div class="voice-status" id="voice-status" aria-live="polite">
+        <span class="voice-status__dot" id="voice-dot"></span>
+        <span class="voice-status__text" id="voice-text">Voice inactive</span>
+      </div>
+    </section>
+
+    <!-- Chat Panel -->
+    <section class="card" id="chat-card" aria-labelledby="chat-heading">
+      <div class="card__header">
+        <span class="card__icon" aria-hidden="true">&#128172;</span>
+        <h2 class="card__title" id="chat-heading">Chat with VisionGuide</h2>
+      </div>
+      <div class="chat-messages" id="chat-messages" role="log" aria-live="polite">
+        <div class="chat-empty">Connect to Gemini and start a conversation</div>
+      </div>
+      <div class="live-caption" id="live-caption" aria-live="polite" hidden>
+        <span class="live-caption__label">Live</span>
+        <span class="live-caption__text" id="live-caption-text"></span>
+      </div>
+      <div class="live-caption live-caption--input" id="live-caption-input" aria-live="polite" hidden>
+        <span class="live-caption__label">You</span>
+        <span class="live-caption__text" id="live-caption-input-text"></span>
+      </div>
+      <form class="chat-input" id="chat-form">
+        <button type="button" class="btn btn--mic" id="btn-mic" aria-label="Toggle microphone for voice input" disabled>
+          <span class="mic-pulse" id="mic-pulse"></span>
+          <span class="mic-icon" id="mic-icon"></span>
+          <span class="mic-label" id="mic-label">Mic</span>
+        </button>
+        <input type="text" class="chat-input__field" id="chat-input" placeholder="Type or speak…" autocomplete="off" aria-label="Message input" disabled />
+        <button type="submit" class="btn btn--primary btn--sm" id="btn-send" aria-label="Send message" disabled>Send</button>
+      </form>
+    </section>
+
+    <section class="card" id="log-card" aria-labelledby="log-heading">
+      <div class="card__header">
+        <span class="card__icon" aria-hidden="true">&#128221;</span>
+        <h2 class="card__title" id="log-heading">System Log</h2>
+      </div>
+      <div class="log" id="system-log" aria-live="polite" role="log">
+        <div class="log__entry log__entry--info">Waiting for hardware check&hellip;</div>
+      </div>
+    </section>
+
+    <div class="status-banner status-banner--idle" id="overall-status" role="status" aria-live="polite">
+      Press "Run All Checks" to verify your hardware
+    </div>
+  </div>
+  <script src="js/hardware.js"></script>
+  <script src="js/audio-handler.js"></script>
+  <script src="js/camera-handler.js"></script>
+  <script src="js/gemini-client.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
