@@ -21,7 +21,8 @@
     controls:       $('controls'),
     btnMic:         $('btn-mic'),
     btnCam:         $('btn-cam'),
-    btnEnd:         $('btn-end')
+    btnEnd:         $('btn-end'),
+    btnEmergency:   $('btn-emergency')
   };
 
   let sessionActive = false;
@@ -30,6 +31,7 @@
   let aiSpeaking = false;
   let toastTimer = null;
   let transcriptTimer = null;
+  let backgroundCaptureTimer = null;
 
   // ===========================
   // Toast messages
@@ -139,23 +141,50 @@
 
       case 'connected':
         ui.toast.hidden = true;
-        sessionActive = true;
 
-        // Hide idle screen, show controls
-        ui.idleScreen.hidden = true;
-        ui.controls.hidden = false;
-        ui.liveBadge.hidden = false;
+        if (sessionActive) {
+          // Reconnection — restart streams
+          Safety.handleReconnected();
+          showToast('Reconnected!', 3000);
+          startMic();
+          startCam();
+        } else {
+          // First connection
+          sessionActive = true;
+          ui.idleScreen.hidden = true;
+          ui.controls.hidden = false;
+          ui.liveBadge.hidden = false;
+          ui.btnEmergency.hidden = false;
 
-        // Start mic streaming
-        startMic();
+          // Start safety layer with keyboard shortcuts
+          Safety.start({
+            onEmergencyStop: () => endSession(),
+            onToggleMic: () => toggleMic(),
+          });
 
-        // Start camera streaming
-        startCam();
+          startMic();
+          startCam();
+        }
+        break;
 
+      case 'reconnecting':
+        showToast(detail || 'Reconnecting…', 20000);
+        Safety.handleReconnecting(detail);
+        // Pause streams while connection is down
+        AudioHandler.stopStreaming();
+        stopCam();
+        micActive = false;
+        setVoiceState('inactive');
+        break;
+
+      case 'failed':
+        showToast(detail || 'Connection failed permanently', 8000);
+        Safety.handleConnectionLost(detail);
+        resetSession();
         break;
 
       case 'disconnected':
-        showToast('Disconnected from Gemini', 4000);
+        showToast('Disconnected', 4000);
         resetSession();
         break;
 
@@ -170,6 +199,7 @@
   // Session end / reset
   // ===========================
   function endSession() {
+    Safety.stop();
     AudioHandler.stopStreaming();
     AudioHandler.stopPlayback();
     CameraHandler.stopCapture();
@@ -182,6 +212,7 @@
     micActive = false;
     camActive = false;
     aiSpeaking = false;
+    if (backgroundCaptureTimer) { clearInterval(backgroundCaptureTimer); backgroundCaptureTimer = null; }
 
     ui.cameraFeed.classList.remove('visible');
     ui.cameraFeed.srcObject = null;
@@ -192,6 +223,7 @@
     ui.btnStart.disabled = false;
     ui.btnMic.classList.remove('is-muted');
     ui.btnCam.classList.remove('is-muted');
+    ui.btnEmergency.hidden = true;
 
     setVoiceState('inactive');
     Hardware.cleanup();
@@ -231,24 +263,31 @@
   }
 
   // ===========================
-  // Camera toggle
+  // Camera (on-demand frame capture)
   // ===========================
+
+  /** Send a single frame to Gemini for visual context. */
+  function sendFrame() {
+    if (!camActive) return;
+    CameraHandler.captureOnDemand((base64Frame) => {
+      GeminiClient.sendVideo(base64Frame);
+    });
+  }
+
   function startCam() {
-    try {
-      CameraHandler.startCapture((base64Frame) => {
-        GeminiClient.sendVideo(base64Frame);
-      }, { fps: 1, quality: 0.4 });
-      camActive = true;
-      ui.btnCam.classList.remove('is-muted');
-    } catch (e) {
-      showToast('Camera error: ' + e.message);
-    }
+    camActive = true;
+    ui.btnCam.classList.remove('is-muted');
+    // Send initial frame for context
+    sendFrame();
+    // Background capture every 5s for passive scene awareness
+    if (backgroundCaptureTimer) clearInterval(backgroundCaptureTimer);
+    backgroundCaptureTimer = setInterval(() => sendFrame(), 5000);
   }
 
   function stopCam() {
-    CameraHandler.stopCapture();
     camActive = false;
     ui.btnCam.classList.add('is-muted');
+    if (backgroundCaptureTimer) { clearInterval(backgroundCaptureTimer); backgroundCaptureTimer = null; }
   }
 
   function toggleCam() {
@@ -272,6 +311,7 @@
 
   function handleInputTranscription(text) {
     showTranscript('You: ' + text);
+    sendFrame(); // Send a fresh frame so Gemini has current visual context
   }
 
   function handleOutputTranscription(text) {
@@ -305,6 +345,7 @@
   ui.btnMic.addEventListener('click', toggleMic);
   ui.btnCam.addEventListener('click', toggleCam);
   ui.btnEnd.addEventListener('click', endSession);
+  ui.btnEmergency.addEventListener('click', () => Safety.triggerEmergencyStop());
 
   window.addEventListener('beforeunload', () => {
     if (sessionActive) {

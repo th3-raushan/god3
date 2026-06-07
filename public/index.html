@@ -60,6 +60,14 @@
       <span id="toast-text"></span>
     </div>
 
+    <!-- Emergency stop button (always visible during active session) -->
+    <button class="emergency-btn" id="btn-emergency" hidden aria-label="Emergency Stop — press Space bar">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <path d="M6 6h12v12H6z"/>
+      </svg>
+      <span>STOP</span>
+    </button>
+
     <!-- Bottom controls (shown when session is active) -->
     <div class="controls" id="controls" hidden>
       <button class="ctrl-btn" id="btn-mic" aria-label="Toggle microphone">
@@ -94,6 +102,7 @@
   <script src="js/audio-handler.js"></script>
   <script src="js/camera-handler.js"></script>
   <script src="js/gemini-client.js"></script>
+  <script src="js/safety.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

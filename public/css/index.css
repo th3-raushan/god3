@@ -392,6 +392,52 @@ html, body {
   box-shadow: 0 0 20px var(--danger-glow);
 }
 
+/* ===== Emergency Stop Button ===== */
+.emergency-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--danger);
+  color: #fff;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 12px;
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  -webkit-tap-highlight-color: transparent;
+  animation: fade-in 0.3s ease;
+}
+
+.emergency-btn:hover {
+  background: #d32f2f;
+  box-shadow: 0 0 24px var(--danger-glow);
+}
+
+.emergency-btn:active {
+  transform: scale(0.95);
+}
+
+.emergency-btn:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+.emergency-btn[hidden] { display: none; }
+
+.emergency-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
 /* ===== Animations ===== */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -403,4 +449,5 @@ html, body {
   .controls { gap: 24px; }
   .ctrl-btn { width: 60px; height: 60px; }
   .ctrl-btn svg { width: 26px; height: 26px; }
+  .emergency-btn { padding: 12px 24px; font-size: 0.9rem; }
 }

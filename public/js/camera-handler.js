@@ -117,6 +117,21 @@ const CameraHandler = (() => {
     jpegQuality = Math.max(0.3, Math.min(1.0, quality));
   }
 
+  /**
+   * Capture a single frame on demand (without continuous streaming).
+   * Used for on-demand scene understanding — send a frame only when needed.
+   * @param {Function} callback — receives base64 JPEG string
+   */
+  function captureOnDemand(callback) {
+    if (!videoEl || !ctx) return;
+    if (videoEl.readyState < 2) return; // Video not ready yet
+
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', jpegQuality);
+    const base64 = dataUrl.split(',')[1];
+    if (base64 && callback) callback(base64);
+  }
+
   function isStreaming() { return streaming; }
   function getFps() { return fps; }
   function getFrameCount() { return frameCount; }
@@ -126,6 +141,7 @@ const CameraHandler = (() => {
     startCapture,
     stopCapture,
     captureFrame,
+    captureOnDemand,
     setFps,
     setQuality,
     isStreaming,

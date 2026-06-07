@@ -48,13 +48,10 @@ wss.on('connection', (browserWs) => {
 
       const setupMsg = {
         setup: {
-          model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
+          model: 'models/gemini-3.1-flash-live-preview',
           generationConfig: {
             responseModalities: ['AUDIO'],
             temperature: 0.3,
-            thinkingConfig: {
-              thinkingBudget: 0
-            }
           },
           systemInstruction: {
             parts: [{ text: SYSTEM_INSTRUCTION }]
@@ -64,8 +61,8 @@ wss.on('connection', (browserWs) => {
               disabled: false,
               startOfSpeechSensitivity: 'START_SENSITIVITY_HIGH',
               endOfSpeechSensitivity: 'END_SENSITIVITY_HIGH',
-              prefixPaddingMs: 50,
-              silenceDurationMs: 300
+              prefixPaddingMs: 20,
+              silenceDurationMs: 200
             }
           },
           outputAudioTranscription: {},
@@ -124,8 +121,8 @@ wss.on('connection', (browserWs) => {
           }
         }
 
-        // Log unhandled message types for debugging
-        if (!msg.setupComplete && !msg.serverContent) {
+        // Log unhandled message types for debugging (skip routine session resumption updates)
+        if (!msg.setupComplete && !msg.serverContent && !msg.sessionResumptionUpdate) {
           console.log('[Gemini] Other message:', JSON.stringify(msg).substring(0, 200));
         }
       } catch (e) {
