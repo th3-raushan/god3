@@ -34,9 +34,18 @@ wss.on('connection', (browserWs) => {
   let geminiWs = null;
   let setupDone = false;
 
+  // Safe send — prevents crashes if browser disconnects mid-response
+  function safeSend(data) {
+    try {
+      if (browserWs.readyState === WebSocket.OPEN) {
+        browserWs.send(data);
+      }
+    } catch (_) { /* browser gone — ignore */ }
+  }
+
   function connectGemini() {
     if (!GEMINI_KEY) {
-      browserWs.send(JSON.stringify({ type: 'error', message: 'GEMINI_API_KEY not configured on server. Create a .env file.' }));
+      safeSend(JSON.stringify({ type: 'error', message: 'GEMINI_API_KEY not configured on server. Create a .env file.' }));
       return;
     }
 
@@ -82,7 +91,7 @@ wss.on('connection', (browserWs) => {
         if (msg.setupComplete) {
           setupDone = true;
           console.log('[Gemini] Setup complete');
-          browserWs.send(JSON.stringify({ type: 'connected' }));
+          safeSend(JSON.stringify({ type: 'connected' }));
           return;
         }
 
@@ -93,7 +102,7 @@ wss.on('connection', (browserWs) => {
 
           // If Gemini interrupted its own output (user started speaking), notify browser
           if (interrupted) {
-            browserWs.send(JSON.stringify({ type: 'interrupted' }));
+            safeSend(JSON.stringify({ type: 'interrupted' }));
           }
 
           for (const part of parts) {
@@ -101,23 +110,23 @@ wss.on('connection', (browserWs) => {
             if (part.thought) continue;
 
             if (part.text) {
-              browserWs.send(JSON.stringify({ type: 'text', text: part.text }));
+              safeSend(JSON.stringify({ type: 'text', text: part.text }));
             }
             if (part.inlineData) {
-              browserWs.send(JSON.stringify({ type: 'audio', data: part.inlineData.data }));
+              safeSend(JSON.stringify({ type: 'audio', data: part.inlineData.data }));
             }
           }
 
           if (msg.serverContent.outputTranscription?.text) {
-            browserWs.send(JSON.stringify({ type: 'outputTranscription', text: msg.serverContent.outputTranscription.text }));
+            safeSend(JSON.stringify({ type: 'outputTranscription', text: msg.serverContent.outputTranscription.text }));
           }
 
           if (msg.serverContent.inputTranscription?.text) {
-            browserWs.send(JSON.stringify({ type: 'inputTranscription', text: msg.serverContent.inputTranscription.text }));
+            safeSend(JSON.stringify({ type: 'inputTranscription', text: msg.serverContent.inputTranscription.text }));
           }
 
           if (turnComplete) {
-            browserWs.send(JSON.stringify({ type: 'turnComplete' }));
+            safeSend(JSON.stringify({ type: 'turnComplete' }));
           }
         }
 
@@ -137,15 +146,15 @@ wss.on('connection', (browserWs) => {
 
       // Send error for non-normal closes so the browser can display the reason
       if (code !== 1000) {
-        browserWs.send(JSON.stringify({ type: 'error', message: `Gemini closed (${code}): ${reasonStr}` }));
+        safeSend(JSON.stringify({ type: 'error', message: `Gemini closed (${code}): ${reasonStr}` }));
       } else {
-        browserWs.send(JSON.stringify({ type: 'disconnected', code, reason: reasonStr }));
+        safeSend(JSON.stringify({ type: 'disconnected', code, reason: reasonStr }));
       }
     });
 
     geminiWs.on('error', (err) => {
       console.error('[Gemini] Error:', err.message);
-      browserWs.send(JSON.stringify({ type: 'error', message: err.message }));
+      safeSend(JSON.stringify({ type: 'error', message: err.message }));
     });
   }
 
@@ -210,6 +219,6 @@ wss.on('connection', (browserWs) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`VisionGuide server running → http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`VisionGuide server running on port ${PORT}`);
 });
